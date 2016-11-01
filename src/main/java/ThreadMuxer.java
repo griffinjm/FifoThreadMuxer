@@ -1,6 +1,3 @@
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
-
 /**
  * Created by griffinjm on 29/10/2016.
  */
@@ -10,6 +7,8 @@ public interface ThreadMuxer {
 
     void stop();
 
-    void execute(Runnable task);
+    void execute(String fifoValue, Runnable task);
+
+    void execute(Object fifoValue, Runnable task);
 
 }
