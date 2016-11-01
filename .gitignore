@@ -51,3 +51,4 @@ modules.xml
 .idea/misc.xml 
 *.ipr
 target/
+.idea/dictionaries/
