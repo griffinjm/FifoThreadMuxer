@@ -1,10 +1,13 @@
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Created by griffinjm on 29/10/2016.
@@ -20,9 +23,9 @@ public class FifoThreadMuxer implements ThreadMuxer {
     private ExecutorService executorService;
 
     // a map of task queues mapped to integers
-    private final Map<Integer, LinkedBlockingQueue<Runnable>> workerQueues;
+    private final Map<Integer, LinkedBlockingQueue<Runnable>> workerTaskQueues;
 
-    // an list of all MuxerWorker runnables
+    // a list of all MuxerWorker runnables
     private final List<MuxerWorker> workers;
 
     public FifoThreadMuxer() {
@@ -33,7 +36,7 @@ public class FifoThreadMuxer implements ThreadMuxer {
         this.numThreads = numThreads;
         //size the collections appropriately
         this.workers = new ArrayList<>(numThreads);
-        this.workerQueues = new ConcurrentHashMap<>(numThreads);
+        this.workerTaskQueues = new ConcurrentHashMap<>(numThreads);
     }
 
     @Override
@@ -79,42 +82,26 @@ public class FifoThreadMuxer implements ThreadMuxer {
         final String methodName = "startWorkers";
         logger.info(methodName);
 
-        // init each LinkedBlockingQueue
-        // link each LinkedBlockingQueue with a thread number
-        // start the worker
         for (int i = 0; i < numThreads; i++) {
-            LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
-            workerQueues.put(i, queue);
             startWorker(i);
         }
     }
 
-    // get the blocking queue
-    // create the WorkerRunnable, passing the its queue and threadNumber
-    // add a reference to the Worker in the workers list
-    // add a reference to the Future returned by submitting the WorkerRunnable to the executorService
-    private void startWorker(int threadNumber) {
+
+    // link each LinkedBlockingQueue with a muxerId
+    // create the MuxerWorker, passing the its taskQueue and muxerId
+    // add a reference to the taskQueue in the taskQueue map
+    // add a reference to the MuxerWorker in the workers list
+    private void startWorker(int muxerId) {
         final String methodName = "startWorker";
         logger.info(methodName);
 
-        LinkedBlockingQueue<Runnable> workerQueue = workerQueues.get(threadNumber);
-        MuxerWorker worker = new MuxerWorker(workerQueue);
-        workers.set(threadNumber, worker);
+        LinkedBlockingQueue<Runnable> workerQueue = new LinkedBlockingQueue<>();
+        workerTaskQueues.put(muxerId, workerQueue);
+
+        MuxerWorker worker = new MuxerWorker(muxerId, workerQueue);
+        workers.set(muxerId, worker);
         executorService.submit(worker);
-    }
-
-    public static class MuxerWorker implements Runnable {
-
-        private final LinkedBlockingQueue<Runnable> taskQueue;
-
-        public MuxerWorker(LinkedBlockingQueue<Runnable> taskQueue) {
-            this.taskQueue = taskQueue;
-        }
-
-        @Override
-        public void run() {
-
-        }
     }
 
 }
