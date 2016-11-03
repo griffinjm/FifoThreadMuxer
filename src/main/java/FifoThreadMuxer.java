@@ -44,19 +44,12 @@ public class FifoThreadMuxer implements ThreadMuxer {
     @Override
     public void stop() {
 
-
-    }
-
-    @Override
-    public void execute(String fifoValue, Runnable task) {
-
     }
 
     @Override
     public void execute(Object fifoValue, Runnable task) {
 
     }
-
 
     private void startup() {
         String methodName = "startup";
@@ -65,7 +58,6 @@ public class FifoThreadMuxer implements ThreadMuxer {
         initExecutorService();
         startWorkers();
     }
-
 
     private void initExecutorService() {
         final String methodName = "initExecutorService";
