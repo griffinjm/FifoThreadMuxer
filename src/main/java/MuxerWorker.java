@@ -77,4 +77,8 @@ public class MuxerWorker implements Runnable {
     public int getMuxerId() {
         return muxerId;
     }
+
+    public void stop(){
+        running.set(false);
+    }
 }

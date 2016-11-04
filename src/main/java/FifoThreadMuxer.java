@@ -2,12 +2,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 
 /**
  * Created by griffinjm on 29/10/2016.
@@ -35,7 +33,7 @@ public class FifoThreadMuxer implements ThreadMuxer {
     public FifoThreadMuxer(int numThreads) {
         this.numThreads = numThreads;
         //size the collections appropriately
-        this.workers = new ArrayList<>(numThreads);
+        this.workers = Collections.synchronizedList(new ArrayList<MuxerWorker>(numThreads));
         this.workerTaskQueues = new ConcurrentHashMap<>(numThreads);
     }
 
@@ -46,7 +44,30 @@ public class FifoThreadMuxer implements ThreadMuxer {
 
     @Override
     public void stop() {
+        String methodName = "stop";
+        logger.info(methodName);
 
+        if (executorService != null) {
+            synchronized (workers){
+                for (MuxerWorker worker : workers) {
+                    logger.info(methodName, "Stopping worker: {}", worker.getMuxerId());
+                    worker.stop();
+                }
+            }
+
+            logger.info(methodName, "Stopping executorService...");
+
+            executorService.shutdownNow();
+            try {
+                boolean terminated = executorService.awaitTermination(30, TimeUnit.SECONDS);
+                logger.info(methodName, "executorService terminated within {} timeout: {}", 30,
+                         terminated);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                logger.error(methodName, ex, "InterruptedException thrown while awaiting executorService termination");
+            }
+            executorService = null;
+        }
     }
 
     @Override
