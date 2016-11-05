@@ -56,11 +56,40 @@ public class FifoThreadMuxer implements ThreadMuxer {
         shutdownExecutorService();
     }
 
+    /**
+     * Place the passed task on the appropriate muxer's queue for execution.
+     *
+     * @param fifoValue The String value to use for maintaining fifo order.
+     * @param task      The task to execute.
+     */
     @Override
-    public void execute(Object fifoValue, Runnable task) {
+    public void execute(String fifoValue, Runnable task) {
         final String methodName = "execute";
         logger.info(methodName);
 
+        if (fifoValue == null || fifoValue.isEmpty()) {
+            throw new IllegalArgumentException("fifoValue is invalid");
+        }
+
+        if (task == null) {
+            throw new IllegalArgumentException("task is null");
+        }
+
+        int muxerId = getMuxerId(fifoValue);
+        logger.info(methodName, "adding task to muxer: {}", muxerId);
+
+        workerTaskQueues.get(muxerId).add(task);
+    }
+
+    /**
+     * For a given String this will always return the same int value. Used to determine which muxer should execute the
+     * given task.
+     *
+     * @param fifoValue The String value to use for maintaining fifo order.
+     * @return An int identifying which muxer should execute this rask.
+     */
+    private int getMuxerId(String fifoValue) {
+        return fifoValue.hashCode() % numThreads;
     }
 
     private void initExecutorService() {

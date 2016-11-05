@@ -7,6 +7,6 @@ public interface ThreadMuxer {
 
     void stop();
 
-    void execute(Object fifoValue, Runnable task);
+    void execute(String fifoValue, Runnable task);
 
 }
