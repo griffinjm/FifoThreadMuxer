@@ -14,6 +14,7 @@ public class FifoThreadMuxer implements ThreadMuxer {
 
     private static final Logger logger = LoggerFactory.getLogger(FifoThreadMuxer.class);
 
+    private static final long DEFAULT_AWAIT_TERMINATION_SECONDS = 30L;
     private static final int DEFAULT_NUM_THREADS = 4;
     private final int numThreads;
 
@@ -39,48 +40,27 @@ public class FifoThreadMuxer implements ThreadMuxer {
 
     @Override
     public void start() {
-        startup();
-    }
-
-    @Override
-    public void stop() {
-        String methodName = "stop";
-        logger.info(methodName);
-
-        if (executorService != null) {
-            synchronized (workers){
-                for (MuxerWorker worker : workers) {
-                    logger.info(methodName, "Stopping worker: {}", worker.getMuxerId());
-                    worker.stop();
-                }
-            }
-
-            logger.info(methodName, "Stopping executorService...");
-
-            executorService.shutdownNow();
-            try {
-                boolean terminated = executorService.awaitTermination(30, TimeUnit.SECONDS);
-                logger.info(methodName, "executorService terminated within {} timeout: {}", 30,
-                         terminated);
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-                logger.error(methodName, ex, "InterruptedException thrown while awaiting executorService termination");
-            }
-            executorService = null;
-        }
-    }
-
-    @Override
-    public void execute(Object fifoValue, Runnable task) {
-
-    }
-
-    private void startup() {
-        String methodName = "startup";
+        final String methodName = "start";
         logger.info(methodName);
 
         initExecutorService();
         startWorkers();
+    }
+
+    @Override
+    public void stop() {
+        final String methodName = "stop";
+        logger.info(methodName);
+
+        stopWorkers();
+        shutdownExecutorService();
+    }
+
+    @Override
+    public void execute(Object fifoValue, Runnable task) {
+        final String methodName = "execute";
+        logger.info(methodName);
+
     }
 
     private void initExecutorService() {
@@ -108,7 +88,6 @@ public class FifoThreadMuxer implements ThreadMuxer {
         }
     }
 
-
     // link each LinkedBlockingQueue with a muxerId
     // create the MuxerWorker, passing the its taskQueue and muxerId
     // add a reference to the taskQueue in the taskQueue map
@@ -123,6 +102,39 @@ public class FifoThreadMuxer implements ThreadMuxer {
         MuxerWorker worker = new MuxerWorker(muxerId, workerQueue);
         workers.set(muxerId, worker);
         executorService.submit(worker);
+    }
+
+    private void stopWorkers() {
+        final String methodName = "stopWorkers";
+        logger.info(methodName);
+
+        synchronized (workers) {
+            for (MuxerWorker worker : workers) {
+                logger.info(methodName, "Stopping worker: {}", worker.getMuxerId());
+                worker.stop();
+            }
+        }
+    }
+
+    private void shutdownExecutorService() {
+        final String methodName = "shutdownExecutorService";
+        logger.info(methodName);
+
+        if (executorService != null) {
+            logger.info(methodName, "Stopping executorService...");
+
+            executorService.shutdownNow();
+            try {
+                boolean terminated = executorService
+                        .awaitTermination(DEFAULT_AWAIT_TERMINATION_SECONDS, TimeUnit.SECONDS);
+                logger.info(methodName, "executorService terminated within {} timeout: {}", 30,
+                            terminated);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                logger.error(methodName, ex, "InterruptedException thrown while awaiting executorService termination");
+            }
+            executorService = null;
+        }
     }
 
 }
