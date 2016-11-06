@@ -3,9 +3,9 @@
  */
 public interface ThreadMuxer {
 
-    void start();
+    void start() throws InterruptedException;
 
-    void stop();
+    void stop() throws InterruptedException;
 
     void execute(String fifoValue, Runnable task);
 

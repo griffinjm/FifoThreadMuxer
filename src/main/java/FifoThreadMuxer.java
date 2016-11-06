@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by griffinjm on 29/10/2016.
@@ -16,16 +18,20 @@ public class FifoThreadMuxer implements ThreadMuxer {
 
     private static final long DEFAULT_AWAIT_TERMINATION_SECONDS = 30L;
     private static final int DEFAULT_NUM_THREADS = 4;
+
+    // used to prevent multiple threads calling the same method (start/stop) resulting in undefined behaviour
+    private final ReentrantLock stateLock = new ReentrantLock(true);
+    // represents the current state of the ThreadMuxer
+    private final AtomicBoolean running = new AtomicBoolean(false);
+
     private final int numThreads;
+    // a map of task queues mapped to integers
+    private final Map<Integer, LinkedBlockingQueue<Runnable>> workerTaskQueues;
+    // a list of all MuxerWorker runnables
+    private final List<MuxerWorker> workers;
 
     // The ExecutorService used to process the submitted tasks
     private ExecutorService executorService;
-
-    // a map of task queues mapped to integers
-    private final Map<Integer, LinkedBlockingQueue<Runnable>> workerTaskQueues;
-
-    // a list of all MuxerWorker runnables
-    private final List<MuxerWorker> workers;
 
     public FifoThreadMuxer() {
         this(DEFAULT_NUM_THREADS);
@@ -39,21 +45,49 @@ public class FifoThreadMuxer implements ThreadMuxer {
     }
 
     @Override
-    public void start() {
+    public void start() throws InterruptedException {
         final String methodName = "start";
         logger.info(methodName);
 
-        initExecutorService();
-        startWorkers();
+        if (running.get()) {
+            logger.info(methodName, "already started");
+            return;
+        }
+
+        stateLock.lockInterruptibly();
+        try {
+            initExecutorService();
+            startWorkers();
+            running.set(true);
+        } catch (Exception e) {
+            logger.error("exception thrown while attempting start", e);
+            throw new IllegalStateException("exception thrown while attempting start", e);
+        } finally {
+            stateLock.unlock();
+        }
     }
 
     @Override
-    public void stop() {
+    public void stop() throws InterruptedException {
         final String methodName = "stop";
         logger.info(methodName);
 
-        stopWorkers();
-        shutdownExecutorService();
+        if (!running.get()) {
+            logger.info(methodName, "already stopped");
+            return;
+        }
+
+        stateLock.lockInterruptibly();
+        try {
+            shutdownExecutorService();
+            stopWorkers();
+            running.set(false);
+        } catch (Exception e) {
+            logger.error("exception thrown while attempting stop", e);
+            throw new IllegalStateException("exception thrown while attempting stop", e);
+        } finally {
+            stateLock.unlock();
+        }
     }
 
     /**
@@ -66,6 +100,10 @@ public class FifoThreadMuxer implements ThreadMuxer {
     public void execute(String fifoValue, Runnable task) {
         final String methodName = "execute";
         logger.info(methodName);
+
+        if (!running.get()) {
+            throw new IllegalStateException("cannot execute task, muxer not running");
+        }
 
         if (fifoValue == null || fifoValue.isEmpty()) {
             throw new IllegalArgumentException("fifoValue is invalid");
