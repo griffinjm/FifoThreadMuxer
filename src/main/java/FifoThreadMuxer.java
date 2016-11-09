@@ -127,7 +127,7 @@ public class FifoThreadMuxer implements ThreadMuxer {
      * @return An int identifying which muxer should execute this rask.
      */
     private int getMuxerId(String fifoValue) {
-        return fifoValue.hashCode() % numThreads;
+        return Math.abs(fifoValue.hashCode()) % numThreads;
     }
 
     private void initExecutorService() {
