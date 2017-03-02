@@ -1,3 +1,5 @@
+package ie.griffinjm.fifothreadmuxer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,13 +23,13 @@ public class FifoThreadMuxer implements ThreadMuxer {
 
     // used to prevent multiple threads calling the same method (start/stop) resulting in undefined behaviour
     private final ReentrantLock stateLock = new ReentrantLock(true);
-    // represents the current state of the ThreadMuxer
+    // represents the current state of the ie.griffinjm.ThreadMuxer
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     private final int numThreads;
     // a map of task queues mapped to integers
     private final Map<Integer, LinkedBlockingQueue<Runnable>> workerTaskQueues;
-    // a list of all MuxerWorker runnables
+    // a list of all ie.griffinjm.MuxerWorker runnables
     private final List<MuxerWorker> workers;
 
     // The ExecutorService used to process the submitted tasks
@@ -156,9 +158,9 @@ public class FifoThreadMuxer implements ThreadMuxer {
     }
 
     // link each LinkedBlockingQueue with a muxerId
-    // create the MuxerWorker, passing the its taskQueue and muxerId
+    // create the ie.griffinjm.MuxerWorker, passing the its taskQueue and muxerId
     // add a reference to the taskQueue in the taskQueue map
-    // add a reference to the MuxerWorker in the workers list
+    // add a reference to the ie.griffinjm.MuxerWorker in the workers list
     private void startWorker(int muxerId) {
         final String methodName = "startWorker";
         logger.info(methodName);

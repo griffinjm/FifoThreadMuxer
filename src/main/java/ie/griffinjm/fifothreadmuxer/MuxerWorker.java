@@ -1,3 +1,5 @@
+package ie.griffinjm.fifothreadmuxer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +13,7 @@ public class MuxerWorker implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(MuxerWorker.class);
 
-    private static final String THREAD_NAME_PREFIX = "MuxerWorker-";
+    private static final String THREAD_NAME_PREFIX = "ie.griffinjm.MuxerWorker-";
     private static final String MUXER_ID = "muxerId";
     private static final String QUEUE_SIZE = "queueSize";
 
@@ -41,7 +43,7 @@ public class MuxerWorker implements Runnable {
             processNextTask();
         }
 
-        logger.info(methodName, "MuxerWorker stopped {}:{}", QUEUE_SIZE,
+        logger.info(methodName, "ie.griffinjm.MuxerWorker stopped {}:{}", QUEUE_SIZE,
                     taskQueue.size());
 
         finished.set(true);
@@ -70,7 +72,7 @@ public class MuxerWorker implements Runnable {
                 logger.warn(methodName, "Processing thread was interrupted abnormally");
             }
 
-            logger.info(methodName, "MuxerWorker Thread Interrupted, {}:{}", QUEUE_SIZE, taskQueue.size());
+            logger.info(methodName, "ie.griffinjm.MuxerWorker Thread Interrupted, {}:{}", QUEUE_SIZE, taskQueue.size());
         }
     }
 
