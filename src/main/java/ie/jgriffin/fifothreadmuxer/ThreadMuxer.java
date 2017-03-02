@@ -1,4 +1,4 @@
-package ie.griffinjm.fifothreadmuxer;
+package ie.jgriffin.fifothreadmuxer;
 
 /**
  * Created by griffinjm on 29/10/2016.
