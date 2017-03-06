@@ -33,17 +33,18 @@ public class MuxerWorker implements Runnable {
 
     @Override
     public void run() {
-        final String originalThreadName = Thread.currentThread().getName();
-        Thread.currentThread().setName(muxerWorkerThreadName);
-
         String methodName = "run";
         logger.info(methodName);
+
+        logger.info("renaming thread {} to {}", Thread.currentThread().getName(), muxerWorkerThreadName);
+        final String originalThreadName = Thread.currentThread().getName();
+        Thread.currentThread().setName(muxerWorkerThreadName);
 
         while (running.get() && !Thread.currentThread().isInterrupted()) {
             processNextTask();
         }
 
-        logger.info(methodName, "MuxerWorker stopped {}:{}", QUEUE_SIZE,
+        logger.info("MuxerWorker stopped {}:{}", QUEUE_SIZE,
                     taskQueue.size());
 
         finished.set(true);
@@ -55,13 +56,13 @@ public class MuxerWorker implements Runnable {
      */
     private void processNextTask() {
         final String methodName = "processNextInQueue";
-        logger.info(methodName);
-        // take the next runnable and execute
-        Runnable task;
-        logger.trace(methodName, "Dequeueing next task");
+        logger.debug(methodName);
+
+        logger.trace("Dequeueing next task");
         try {
-            task = taskQueue.take();
-            logger.debug(methodName, "Executing next task in queue");
+            // take the next runnable and execute
+            Runnable task = taskQueue.take();
+            logger.trace("Executing next task in queue");
             task.run();
         } catch (InterruptedException e) {
             // set the interrupted flag again for higher level interrupt handlers
@@ -69,10 +70,10 @@ public class MuxerWorker implements Runnable {
 
             if (running.get()) {
                 //interrupted while still running???
-                logger.warn(methodName, "Processing thread was interrupted abnormally");
+                logger.warn("Processing thread was interrupted abnormally");
             }
 
-            logger.info(methodName, "MuxerWorker Thread Interrupted, {}:{}", QUEUE_SIZE, taskQueue.size());
+            logger.info("MuxerWorker Thread Interrupted, {}:{}", QUEUE_SIZE, taskQueue.size());
         }
     }
 
