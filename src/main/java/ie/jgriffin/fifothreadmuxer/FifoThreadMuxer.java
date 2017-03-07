@@ -129,7 +129,27 @@ public class FifoThreadMuxer implements ThreadMuxer {
      * @return An int identifying which muxer should execute this rask.
      */
     private int getMuxerId(String fifoValue) {
-        return Math.abs(fifoValue.hashCode()) % numThreads;
+        return Math.abs(smearHash(fifoValue.hashCode())) % numThreads;
+    }
+
+    /**
+     * Applies a supplemental hash function to a given hashCode, which defends against poor quality hash functions.
+     * <p>
+     * This function ensures that hashCodes that differ only by constant multiples at each bit position have a bounded
+     * number of collisions (approximately 8 at default load factor).
+     * <p>
+     * This method was written by Doug Lea with assistance from members of JCP JSR-166 Expert Group and released to the
+     * public domain, as explained at http://creativecommons.org/licenses/publicdomain
+     * <p>
+     * As of 2010/06/11, this method is identical to the (package private) hash method in OpenJDK 7's
+     * java.util.HashMap class.
+     *
+     * @param hashCode the original hashcode
+     * @return the "smeared" hashcode
+     */
+    private int smearHash(int hashCode) {
+        hashCode ^= (hashCode >>> 20) ^ (hashCode >>> 12);
+        return hashCode ^ (hashCode >>> 7) ^ (hashCode >>> 4);
     }
 
     private void initExecutorService() {
