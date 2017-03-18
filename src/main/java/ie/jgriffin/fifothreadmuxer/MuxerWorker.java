@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MuxerWorker implements Runnable {
 
-    private static final Logger logger = LoggerFactory.getLogger(MuxerWorker.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MuxerWorker.class);
 
     private static final String THREAD_NAME_PREFIX = "MuxerWorker-";
     private static final String MUXER_ID = "muxerId";
@@ -34,46 +34,45 @@ public class MuxerWorker implements Runnable {
     @Override
     public void run() {
         String methodName = "run";
-        logger.info(methodName);
+        LOGGER.info(methodName);
 
-        logger.info("renaming thread {} to {}", Thread.currentThread().getName(), muxerWorkerThreadName);
         final String originalThreadName = Thread.currentThread().getName();
+        LOGGER.info("renaming thread {} to {}", originalThreadName, muxerWorkerThreadName);
         Thread.currentThread().setName(muxerWorkerThreadName);
 
         while (running.get() && !Thread.currentThread().isInterrupted()) {
             processNextTask();
         }
 
-        logger.info("MuxerWorker stopped {}:{}", QUEUE_SIZE,
-                    taskQueue.size());
+        LOGGER.info("MuxerWorker stopped {}:{}", QUEUE_SIZE, taskQueue.size());
 
         finished.set(true);
         Thread.currentThread().setName(originalThreadName);
     }
 
     /**
-     * A blocking method which will continuously process any tasks in the queue until stopped or interrupted.
+     * A blocking method which will continuously process any tasks in the queue until interrupted.
      */
     private void processNextTask() {
-        final String methodName = "processNextInQueue";
-        logger.debug(methodName);
+        final String methodName = "processNextTask";
+        LOGGER.debug(methodName);
 
-        logger.trace("Dequeueing next task");
+        LOGGER.trace("dequeueing next task");
         try {
             // take the next runnable and execute
             Runnable task = taskQueue.take();
-            logger.trace("Executing next task in queue");
+            LOGGER.trace("executing next task in queue");
             task.run();
         } catch (InterruptedException e) {
             // set the interrupted flag again for higher level interrupt handlers
             Thread.currentThread().interrupt();
 
             if (running.get()) {
-                //interrupted while still running???
-                logger.warn("Processing thread was interrupted abnormally");
+                //interrupted while still running
+                LOGGER.warn("Processing thread was interrupted while processing a submitted task");
             }
 
-            logger.info("MuxerWorker Thread Interrupted, {}:{}", QUEUE_SIZE, taskQueue.size());
+            LOGGER.info("MuxerWorker Thread Interrupted, {}:{}", QUEUE_SIZE, taskQueue.size());
         }
     }
 

@@ -200,7 +200,7 @@ public class FifoThreadMuxer implements ThreadMuxer {
 
         synchronized (workers) {
             for (MuxerWorker worker : workers) {
-                LOGGER.info("Stopping worker: {}", worker.getMuxerId());
+                LOGGER.info("stopping worker: {}", worker.getMuxerId());
                 worker.stop();
             }
         }
@@ -211,7 +211,7 @@ public class FifoThreadMuxer implements ThreadMuxer {
         LOGGER.info(methodName);
 
         if (executorService != null) {
-            LOGGER.info("Stopping executorService...");
+            LOGGER.info("stopping executorService...");
 
             executorService.shutdownNow();
             try {
