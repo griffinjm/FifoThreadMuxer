@@ -139,7 +139,7 @@ public class FifoThreadMuxer implements ThreadMuxer {
      * @return An int identifying which muxer should execute this rask.
      */
     private int getMuxerId(String fifoValue) {
-        return Math.abs(smearHash(fifoValue.hashCode())) % numThreads;
+        return getIndex(smearHash(fifoValue.hashCode()), numThreads);
     }
 
     /**
@@ -160,6 +160,23 @@ public class FifoThreadMuxer implements ThreadMuxer {
     private int smearHash(int hashCode) {
         hashCode ^= (hashCode >>> 20) ^ (hashCode >>> 12);
         return hashCode ^ (hashCode >>> 7) ^ (hashCode >>> 4);
+    }
+
+    /**
+     * Similar to the approach in java's HashMap here:
+     * http://grepcode.com/file/repository.grepcode.com/java/root/jdk/openjdk/6-b14/java/util/HashMap.java#HashMap.indexFor%28int%2Cint%29
+     * <p>
+     * Supposedly faster than the classical modulo approach, at least when used with a power of 2, the smearHash
+     * function in this class defends against poor hash functions.
+     * As the size value (numberThreads) will always be positive then the returned value will also always be positive
+     * due to the bitwise operation.
+     *
+     * @param hash the hash to be used to get the index
+     * @param size the size of the index table
+     * @return the id of the muxer to use
+     */
+    private int getIndex(int hash, int size) {
+        return hash & (size - 1);
     }
 
     private void initExecutorService() {
