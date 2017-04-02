@@ -11,4 +11,8 @@ public interface ThreadMuxer {
 
     void execute(String fifoValue, Runnable task);
 
+    boolean isRunning();
+
+    int getNumberOfMuxers();
+
 }

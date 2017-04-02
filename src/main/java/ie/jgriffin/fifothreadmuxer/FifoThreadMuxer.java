@@ -18,8 +18,8 @@ public class FifoThreadMuxer implements ThreadMuxer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FifoThreadMuxer.class);
 
-    private static final long DEFAULT_AWAIT_TERMINATION_SECONDS = 30L;
-    private static final int DEFAULT_NUM_THREADS = 4;
+    public static final long DEFAULT_AWAIT_TERMINATION_SECONDS = 30L;
+    public static final int DEFAULT_NUM_THREADS = 4;
 
     // used to prevent multiple threads calling the same method (start/stop) resulting in undefined behaviour
     private final ReentrantLock stateLock = new ReentrantLock(true);
@@ -51,16 +51,16 @@ public class FifoThreadMuxer implements ThreadMuxer {
         final String methodName = "start";
         LOGGER.info(methodName);
 
-        if (running.get()) {
-            LOGGER.info("already started");
-            return;
-        }
-
         stateLock.lockInterruptibly();
+
         try {
+            if (running.get()) {
+                LOGGER.info("already started");
+                return;
+            }
+            running.set(true);
             initExecutorService();
             startWorkers();
-            running.set(true);
         } catch (Exception e) {
             LOGGER.error("exception thrown while attempting start", e);
             throw new IllegalStateException("exception thrown while attempting start", e);
@@ -74,16 +74,16 @@ public class FifoThreadMuxer implements ThreadMuxer {
         final String methodName = "stop";
         LOGGER.info(methodName);
 
-        if (!running.get()) {
-            LOGGER.info("already stopped");
-            return;
-        }
-
         stateLock.lockInterruptibly();
+
         try {
-            shutdownExecutorService();
-            stopWorkers();
+            if (!running.get()) {
+                LOGGER.info("already stopped");
+                return;
+            }
             running.set(false);
+            stopWorkers();
+            shutdownExecutorService();
         } catch (Exception e) {
             LOGGER.error("exception thrown while attempting stop", e);
             throw new IllegalStateException("exception thrown while attempting stop", e);
@@ -119,6 +119,16 @@ public class FifoThreadMuxer implements ThreadMuxer {
         LOGGER.info("adding task to muxer: {}", muxerId);
 
         workerTaskQueues.get(muxerId).add(task);
+    }
+
+    @Override
+    public boolean isRunning() {
+        return running.get();
+    }
+
+    @Override
+    public int getNumberOfMuxers() {
+        return numThreads;
     }
 
     /**
@@ -178,19 +188,19 @@ public class FifoThreadMuxer implements ThreadMuxer {
     }
 
     // link each LinkedBlockingQueue with a muxerId
-    // create the MuxerWorker, passing the its taskQueue and muxerId
+    // create the MuxerWorker, passing its taskQueue and muxerId
     // add a reference to the taskQueue in the taskQueue map
     // add a reference to the MuxerWorker in the workers list
     private void startWorker(int muxerId) {
         final String methodName = "startWorker";
         LOGGER.info(methodName);
-        LOGGER.info("muxerId: {}");
+        LOGGER.info("muxerId: {}", muxerId);
 
         LinkedBlockingQueue<Runnable> workerQueue = new LinkedBlockingQueue<>();
         workerTaskQueues.put(muxerId, workerQueue);
 
         MuxerWorker worker = new MuxerWorker(muxerId, workerQueue);
-        workers.set(muxerId, worker);
+        workers.add(worker);
         executorService.submit(worker);
     }
 
@@ -217,7 +227,7 @@ public class FifoThreadMuxer implements ThreadMuxer {
             try {
                 boolean terminated = executorService
                         .awaitTermination(DEFAULT_AWAIT_TERMINATION_SECONDS, TimeUnit.SECONDS);
-                LOGGER.info("executorService terminated within {} timeout: {}", 30,
+                LOGGER.info("executorService terminated within {}s timeout: {}", DEFAULT_AWAIT_TERMINATION_SECONDS,
                             terminated);
             } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();

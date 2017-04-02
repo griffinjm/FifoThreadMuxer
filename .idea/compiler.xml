@@ -23,7 +23,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="1.8">
-      <module name="fifo-thread-muxer" target="1.8" />
+      <module name="fifo-thread-muxer" target="1.7" />
     </bytecodeTargetLevel>
   </component>
 </project>
