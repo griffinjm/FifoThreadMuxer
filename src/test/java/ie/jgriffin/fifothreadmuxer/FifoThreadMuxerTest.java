@@ -94,7 +94,6 @@ public class FifoThreadMuxerTest {
         for (int i = 0; i < numberOfTasks; i++) {
             assertEquals("task is out of order", i, completionList.get(i).intValue());
         }
-
     }
 
 }

@@ -40,6 +40,12 @@ public class FifoThreadMuxer implements ThreadMuxer {
     }
 
     public FifoThreadMuxer(int numThreads) {
+        //Fast power of 2 algo from
+        //https://en.wikipedia.org/wiki/Power_of_two#Fast_algorithm_to_check_if_a_positive_number_is_a_power_of_two
+        if (numThreads < 2 || (numThreads & (numThreads - 1)) != 0) {
+            throw new IllegalArgumentException("invalid argument, must be a power of 2");
+        }
+
         this.numThreads = numThreads;
         //size the collections appropriately
         this.workers = Collections.synchronizedList(new ArrayList<MuxerWorker>(numThreads));
