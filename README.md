@@ -5,7 +5,7 @@ The FifoThreadMuxer provides a method of maintaining FIFO order for related task
  
 ### Methodology
 1. Hashes the provided fifoValue String
-2. "Smears" that first hash with a function provided by the JCP JSR-166 Expert Group (to protect against bad hashes)
+2. "Smears" that first hash with a function provided by the JCP JSR-166 Expert Group (to protect against poor hashes)
 3. Bitwise ANDs the returned int with the number of available threads
 4. The remainder is then used to determine which thread the submitted task will be executed on
 5. Each thread in the ExecutorService is running a MuxerWorker task which continuously performs a blocking take on a single LinkedBlockingQueue of Runnables which ensures that thread will only execute tasks submitted to that queue.
