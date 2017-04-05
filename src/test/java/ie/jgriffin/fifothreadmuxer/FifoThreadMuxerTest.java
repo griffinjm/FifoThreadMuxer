@@ -73,6 +73,7 @@ public class FifoThreadMuxerTest {
                         Thread.sleep(sleepTime);
                         completionList.add(taskSequence);
                     } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         e.printStackTrace();
                     }
 
