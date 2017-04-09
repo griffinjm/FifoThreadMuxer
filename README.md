@@ -2,6 +2,27 @@
 The FifoThreadMuxer provides a method of maintaining FIFO order for related tasks while using a shared ExecutorService processor. Using an approach similar to the standard Java HashMap Collection, it uses a bucketing approach to queue related tasks. This typically has applications in event driven systems where the order of related tasks needs to be maintained.
 
 [Link to post on personal website](http://jgriffin.ie/fifothreadmuxer/)
+
+![Methodology visualisation](https://g.gravizo.com/svg?
+@startuml;
+
+%28*%29 --> "execute%28String fifoValue, Runnable task%29";
+-->"getMuxerId%28String fifoValue%29";
+if "";
+  -->[muxerId == 1] "Queue 1";
+  -->"Thread 1";
+else;
+  -->[muxerId == 2] "Queue 2";
+  -->"Thread 2";
+else;
+  -->[muxerId == n] "Queue n";
+  -->"Thread n";
+endif;
+
+@enduml
+)
+
+
  
 ### Methodology
 1. Hashes the provided fifoValue String
